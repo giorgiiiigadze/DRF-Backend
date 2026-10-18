@@ -4,10 +4,11 @@ A Django REST Framework backend for a macOS app that captures audio and sends tr
 
 ## Setup
 
-Requires Python 3.9+.
+Requires Python 3.9+. On macOS, use a Homebrew Python rather than the Xcode-supplied `/usr/bin/python3`, which is linked with an older LibreSSL build.
 
 ```bash
-python3 -m venv .venv
+brew install python@3.12
+/opt/homebrew/opt/python@3.12/bin/python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
@@ -18,8 +19,8 @@ Export the variables from `.env` with your preferred environment loader, or set 
 ```bash
 export OPENAI_API_KEY="your-key"
 export OPENAI_MODEL="gpt-4o-mini"
-python manage.py migrate
-python manage.py runserver
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py runserver
 ```
 
 The API is served at `http://127.0.0.1:8000/api/`. Create an admin user with `python manage.py createsuperuser` and visit `/admin/` to manage data.
@@ -67,7 +68,7 @@ curl -X POST http://127.0.0.1:8000/api/sessions/1/summary/ \
 ## Tests
 
 ```bash
-python manage.py test
+.venv/bin/python manage.py test
 ```
 
 `api.services.Summarizer` isolates the OpenAI SDK integration. Replace that class with a local PyTorch-backed implementation later without changing any endpoint or view.
