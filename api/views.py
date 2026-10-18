@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Session, Summary, UserPreference
@@ -28,7 +28,7 @@ class SessionListCreateView(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class SessionDetailView(generics.RetrieveAPIView):
+class SessionDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = SessionSerializer
 
     def get_queryset(self):
@@ -48,6 +48,7 @@ class TranscriptSegmentCreateView(APIView):
         serializer = TranscriptSegmentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         segment = serializer.save(session=session)
+        session.save(update_fields=["updated_at"])
         return Response(TranscriptSegmentSerializer(segment).data, status=status.HTTP_201_CREATED)
 
 
@@ -69,6 +70,7 @@ class SessionSummaryView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         with transaction.atomic():
             summary = Summary.objects.create(session=session, text=text)
+            session.save(update_fields=["updated_at"])
         return Response(SummarySerializer(summary).data, status=status.HTTP_201_CREATED)
 
 

@@ -29,6 +29,15 @@ class SessionOwnershipTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(TranscriptSegment.objects.count(), 0)
 
+    def test_owner_can_complete_a_session(self):
+        self.authenticate(self.owner)
+        response = self.client.patch(
+            reverse("session-detail", args=[self.session.id]), {"status": "completed"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "completed")
+        self.assertIsNotNone(response.data["ended_at"])
+
 
 class SummaryEndpointTests(APITestCase):
     def setUp(self):

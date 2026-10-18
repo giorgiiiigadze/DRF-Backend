@@ -35,12 +35,14 @@ All endpoints except registration and login require `Authorization: Bearer <acce
 | POST | `/api/auth/login/` | Obtain access and refresh JWTs |
 | POST | `/api/auth/token/refresh/` | Refresh an access JWT |
 | GET, POST | `/api/sessions/` | List or create the current user's sessions |
-| GET | `/api/sessions/{id}/` | Read one session with segments and summaries |
+| GET, PATCH | `/api/sessions/{id}/` | Read or update one session with segments and summaries |
 | POST | `/api/sessions/{id}/segments/` | Add transcript text |
 | GET, POST | `/api/sessions/{id}/summary/` | Read summaries or generate one |
 | GET, PUT, PATCH | `/api/preferences/` | Read or update current-user preferences |
 
 Sessions and their transcript segments/summaries are scoped to their owner; another user receives `404` for an inaccessible session.
+
+Sessions, transcript segments, summaries, and preferences include audit timestamps. Sessions also have an `active`/`completed` status and an `ended_at` timestamp, which is automatically set when a session is marked completed with `PATCH /api/sessions/{id}/`.
 
 ## Example requests
 
