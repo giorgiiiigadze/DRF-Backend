@@ -34,6 +34,8 @@ All endpoints except registration and login require `Authorization: Bearer <acce
 | POST | `/api/auth/register/` | Create an account |
 | POST | `/api/auth/login/` | Obtain access and refresh JWTs |
 | POST | `/api/auth/token/refresh/` | Refresh an access JWT |
+| POST | `/api/auth/google/` | Exchange a verified Google ID token for application JWTs |
+| POST | `/api/auth/apple/` | Exchange a verified Apple identity token for application JWTs |
 | GET, POST | `/api/sessions/` | List or create the current user's sessions |
 | GET, PATCH | `/api/sessions/{id}/` | Read or update one session with segments and summaries |
 | POST | `/api/sessions/{id}/segments/` | Add transcript text |
@@ -41,6 +43,20 @@ All endpoints except registration and login require `Authorization: Bearer <acce
 | GET, PUT, PATCH | `/api/preferences/` | Read or update current-user preferences |
 
 Sessions and their transcript segments/summaries are scoped to their owner; another user receives `404` for an inaccessible session.
+
+## Google and Apple sign-in
+
+The native macOS app completes the provider sign-in flow, then posts the returned provider token to this backend. The backend verifies the token and returns the same access/refresh JWT format as password login.
+
+```json
+POST /api/auth/google/
+{"id_token":"GOOGLE_ID_TOKEN"}
+
+POST /api/auth/apple/
+{"identity_token":"APPLE_IDENTITY_TOKEN"}
+```
+
+Set `GOOGLE_OAUTH_CLIENT_ID` to the Google OAuth client ID used by the macOS app. Set `APPLE_CLIENT_ID` to the registered Apple bundle ID for native app sign-in, or the Services ID when using a web/server callback. Provider secrets and Apple private keys are not stored by this backend in the native-token flow.
 
 Sessions, transcript segments, summaries, and preferences include audit timestamps. Sessions also have an `active`/`completed` status and an `ended_at` timestamp, which is automatically set when a session is marked completed with `PATCH /api/sessions/{id}/`.
 

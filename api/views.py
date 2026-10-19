@@ -5,7 +5,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Session, Summary, UserPreference
-from .serializers import RegisterSerializer, SessionSerializer, SummarySerializer, TranscriptSegmentSerializer, UserPreferenceSerializer
+from .oauth import AppleTokenVerifier, GoogleTokenVerifier, OAuthConfigurationError, OAuthTokenError, issue_tokens_for_identity
+from .serializers import AppleOAuthSerializer, GoogleOAuthSerializer, RegisterSerializer, SessionSerializer, SummarySerializer, TranscriptSegmentSerializer, UserPreferenceSerializer
 from .services import Summarizer, SummarizerError
 
 
@@ -16,6 +17,40 @@ class RegisterView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
         return Response({"id": response.data["id"], "username": response.data["username"], "email": response.data.get("email", "")}, status=status.HTTP_201_CREATED)
+
+
+class OAuthLoginView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = None
+    verifier_class = None
+    token_field = None
+    provider = None
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            identity = self.verifier_class().verify(serializer.validated_data[self.token_field])
+            tokens = issue_tokens_for_identity(self.provider, identity)
+        except OAuthConfigurationError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except OAuthTokenError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(tokens, status=status.HTTP_200_OK)
+
+
+class GoogleOAuthLoginView(OAuthLoginView):
+    serializer_class = GoogleOAuthSerializer
+    verifier_class = GoogleTokenVerifier
+    token_field = "id_token"
+    provider = "google"
+
+
+class AppleOAuthLoginView(OAuthLoginView):
+    serializer_class = AppleOAuthSerializer
+    verifier_class = AppleTokenVerifier
+    token_field = "identity_token"
+    provider = "apple"
 
 
 class SessionListCreateView(generics.ListCreateAPIView):

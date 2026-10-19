@@ -17,6 +17,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 
+class GoogleOAuthSerializer(serializers.Serializer):
+    id_token = serializers.CharField(write_only=True, trim_whitespace=True)
+
+
+class AppleOAuthSerializer(serializers.Serializer):
+    identity_token = serializers.CharField(write_only=True, trim_whitespace=True)
+
+
 class TranscriptSegmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TranscriptSegment

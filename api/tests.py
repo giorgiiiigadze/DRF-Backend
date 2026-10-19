@@ -4,6 +4,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from .models import Session, Summary, TranscriptSegment
+from .models import SocialIdentity
+from .oauth import VerifiedIdentity
 
 
 class SessionOwnershipTests(APITestCase):
@@ -59,3 +61,25 @@ class SummaryEndpointTests(APITestCase):
             response = self.client.post(reverse("session-summary", args=[self.session.id]), format="json")
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         self.assertIn("OPENAI_API_KEY is missing", response.data["detail"])
+
+
+class OAuthLoginTests(APITestCase):
+    @patch("api.views.GoogleTokenVerifier.verify", return_value=VerifiedIdentity("google-subject-123", "person@example.com"))
+    def test_google_identity_creates_user_and_returns_application_jwts(self, verify):
+        response = self.client.post(reverse("google-oauth-login"), {"id_token": "provider-token"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertEqual(response.data["user"]["email"], "person@example.com")
+        self.assertTrue(SocialIdentity.objects.filter(provider="google", provider_subject="google-subject-123").exists())
+
+        again = self.client.post(reverse("google-oauth-login"), {"id_token": "provider-token"}, format="json")
+        self.assertEqual(again.status_code, status.HTTP_200_OK)
+        self.assertEqual(SocialIdentity.objects.filter(provider="google").count(), 1)
+        self.assertEqual(verify.call_count, 2)
+
+    def test_google_login_reports_missing_configuration(self):
+        with patch.dict("api.oauth.os.environ", {}, clear=True):
+            response = self.client.post(reverse("google-oauth-login"), {"id_token": "provider-token"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertIn("GOOGLE_OAUTH_CLIENT_ID is missing", response.data["detail"])

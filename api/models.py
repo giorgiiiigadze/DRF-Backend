@@ -55,3 +55,24 @@ class UserPreference(models.Model):
     summary_style = models.CharField(max_length=20, choices=SummaryStyle.choices, default=SummaryStyle.CONCISE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class SocialIdentity(models.Model):
+    class Provider(models.TextChoices):
+        GOOGLE = "google", "Google"
+        APPLE = "apple", "Apple"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="social_identities")
+    provider = models.CharField(max_length=16, choices=Provider.choices)
+    provider_subject = models.CharField(max_length=255)
+    email = models.EmailField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("provider", "provider_subject"), name="unique_social_provider_subject")
+        ]
+
+    def __str__(self):
+        return f"{self.provider}:{self.provider_subject}"

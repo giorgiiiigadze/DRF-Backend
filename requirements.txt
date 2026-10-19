@@ -2,3 +2,6 @@ Django>=4.2,<5.1
 djangorestframework>=3.14,<3.16
 djangorestframework-simplejwt>=5.3,<5.4
 openai>=1.0,<2.0
+google-auth>=2.0,<3.0
+requests>=2.31,<3.0
+PyJWT[crypto]>=2.8,<3.0

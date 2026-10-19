@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from .models import Session, Summary, TranscriptSegment, UserPreference
+from .models import Session, SocialIdentity, Summary, TranscriptSegment, UserPreference
 
 
 class TranscriptSegmentInline(admin.TabularInline):
@@ -30,6 +30,13 @@ class SummaryAdmin(admin.ModelAdmin):
 @admin.register(UserPreference)
 class UserPreferenceAdmin(admin.ModelAdmin):
     list_display = ("user", "font_size", "summary_style", "updated_at")
+
+
+@admin.register(SocialIdentity)
+class SocialIdentityAdmin(admin.ModelAdmin):
+    list_display = ("user", "provider", "email", "created_at")
+    list_filter = ("provider",)
+    search_fields = ("user__username", "email", "provider_subject")
 
 
 # Django's Group model remains in the database for future role-based permissions,
